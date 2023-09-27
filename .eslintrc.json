@@ -1,0 +1,21 @@
+{
+  "parser": "@typescript-eslint/parser",
+  "plugins": [ "@typescript-eslint" ],
+  "extends": [
+    "eslint:recommended",
+    "google"
+  ],
+  "rules": {
+    "max-len": [ "error", 100 ],
+    "object-curly-spacing": [ "error", "always" ],
+    "jsx-quotes": [ "error", "prefer-single" ],
+    "require-jsdoc": [ "warn" ]
+  },
+  "parserOptions": {
+    "sourceType": "module",
+    "ecmaVersion": 2020
+  },
+  "env": {
+    "jest": true
+  }
+}
