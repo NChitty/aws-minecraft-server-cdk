@@ -1,10 +1,6 @@
-import { Duration, Fn, Stack, StackProps } from 'aws-cdk-lib';
+import { Duration, Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import {
-  CfnInternetGateway,
-  CfnRouteTable,
-  CfnSubnetRouteTableAssociation,
-  CfnVPCGatewayAttachment,
   InstanceClass,
   InstanceSize,
   InstanceType,
@@ -13,9 +9,7 @@ import {
   Peer,
   Port,
   SecurityGroup,
-  Subnet,
   UserData,
-  Vpc,
 } from 'aws-cdk-lib/aws-ec2';
 import { CfnFileSystem, CfnMountTarget } from 'aws-cdk-lib/aws-efs';
 import { AutoScalingGroup } from 'aws-cdk-lib/aws-autoscaling';
@@ -35,6 +29,7 @@ import { Rule } from 'aws-cdk-lib/aws-events';
 import { LambdaFunction } from 'aws-cdk-lib/aws-events-targets';
 import { ILogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
 import { HostedZone } from 'aws-cdk-lib/aws-route53';
+import { InternetAttachedVpc } from './constructs/InternetAttachedVpc';
 
 export interface MinecraftServerStackProps extends StackProps {
   recordName: string;
@@ -53,44 +48,13 @@ export class AwsMinecraftServerStack extends Stack {
   constructor(scope: Construct, id: string, props: MinecraftServerStackProps) {
     super(scope, id, props);
 
-    const vpc = new Vpc(this, 'Vpc', {
+    const vpc = new InternetAttachedVpc(this, 'Vpc', {
       ipAddresses: IpAddresses.cidr('10.100.0.0/26'),
       enableDnsSupport: true,
       enableDnsHostnames: true,
     });
 
-    const gateway = new InternetGateway(this, 'InternetGateway', {});
-
-    new VpcGatewayAttachment(this, 'InternetGatewayAttachment', {
-      internetGatewayId: gateway.attrInternetGatewayId,
-      vpcId: vpc.vpcId,
-    });
-
-    const routeTable = new RouteTable(this, 'RouteTable', {
-      vpcId: vpc.vpcId,
-    });
-
-    const subnetA = new Subnet(this, 'SubnetA', {
-      availabilityZone: Fn.select(0, Fn.getAzs(Fn.ref('AWS::Region'))),
-      vpcId: vpc.vpcId,
-      cidrBlock: Fn.select(0, Fn.cidr('10.100.0.0/26', 4, '4')),
-    });
-
-    const subnetB = new Subnet(this, 'SubnetB', {
-      availabilityZone: Fn.select(1, Fn.getAzs(Fn.ref('AWS::Region'))),
-      vpcId: vpc.vpcId,
-      cidrBlock: Fn.select(1, Fn.cidr('10.100.0.0/26', 4, '4')),
-    });
-
-    new SubnetRoute(this, 'SubnetARoute', {
-      routeTableId: routeTable.attrRouteTableId,
-      subnetId: subnetA.subnetId,
-    });
-
-    new SubnetRoute(this, 'SubnetBRoute', {
-      routeTableId: routeTable.attrRouteTableId,
-      subnetId: subnetB.subnetId,
-    });
+    const [subnetA, subnetB] = vpc.subnets;
 
     const ec2SecurityGroup = new SecurityGroup(this, 'Ec2Sg', {
       securityGroupName: `${this.stackName}-ec2`,
