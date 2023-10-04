@@ -1,24 +1,56 @@
-import { Fn, Stack, StackProps } from 'aws-cdk-lib';
+import { Duration, Fn, Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import {
-  CfnInternetGateway as InternetGateway,
-  CfnRouteTable as RouteTable,
-  CfnSubnetRouteTableAssociation as SubnetRoute,
-  CfnVPCGatewayAttachment as VpcGatewayAttachment,
-  IpAddresses, Peer, Port,
+  CfnInternetGateway,
+  CfnRouteTable,
+  CfnSubnetRouteTableAssociation,
+  CfnVPCGatewayAttachment,
+  InstanceClass,
+  InstanceSize,
+  InstanceType,
+  IpAddresses,
+  MachineImage,
+  Peer,
+  Port,
   SecurityGroup,
   Subnet,
+  UserData,
   Vpc,
 } from 'aws-cdk-lib/aws-ec2';
-import { CfnFileSystem as FileSystem, CfnMountTarget as MountTarget } from 'aws-cdk-lib/aws-efs';
+import { CfnFileSystem, CfnMountTarget } from 'aws-cdk-lib/aws-efs';
+import { AutoScalingGroup } from 'aws-cdk-lib/aws-autoscaling';
+import { ManagedPolicy, PolicyStatement, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
 import {
-  AutoScalingGroup,
-  CfnLaunchConfiguration as LaunchConfiguration,
-} from 'aws-cdk-lib/aws-autoscaling';
-import { InstanceProfile, ManagedPolicy, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
+  AsgCapacityProvider,
+  Cluster,
+  ContainerImage,
+  Ec2Service,
+  Ec2TaskDefinition,
+  LogDriver,
+  NetworkMode,
+  Protocol,
+} from 'aws-cdk-lib/aws-ecs';
+import { Code, Function, Runtime } from 'aws-cdk-lib/aws-lambda';
+import { Rule } from 'aws-cdk-lib/aws-events';
+import { LambdaFunction } from 'aws-cdk-lib/aws-events-targets';
+import { ILogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
+import { HostedZone } from 'aws-cdk-lib/aws-route53';
+
+export interface MinecraftServerStackProps extends StackProps {
+  recordName: string;
+  hostedZone: HostedZone;
+  logRetentionDays: RetentionDays;
+  streamPrefix: string;
+  logGroup: ILogGroup;
+  mcImageTag: string;
+  keyName: string;
+  instanceSize: InstanceSize;
+  instanceClass: InstanceClass;
+  containerInsights: boolean;
+}
 
 export class AwsMinecraftServerStack extends Stack {
-  constructor(scope: Construct, id: string, props?: StackProps) {
+  constructor(scope: Construct, id: string, props: MinecraftServerStackProps) {
     super(scope, id, props);
 
     const vpc = new Vpc(this, 'Vpc', {
