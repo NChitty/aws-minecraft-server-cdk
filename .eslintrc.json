@@ -9,7 +9,10 @@
     "max-len": [ "error", 100 ],
     "object-curly-spacing": [ "error", "always" ],
     "jsx-quotes": [ "error", "prefer-single" ],
-    "require-jsdoc": [ "warn" ]
+    "require-jsdoc": [ "warn" ],
+    "@typescript-eslint/no-unused-vars": [ "error" ],
+    "no-unused-vars": "off",
+    "curly": [ "error", "multi" ]
   },
   "parserOptions": {
     "sourceType": "module",
